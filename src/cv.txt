@@ -1,0 +1,54 @@
+Web Developer - 07/2014 to 04/2019
+Công ty công nghệ Foobla, Hà Nội
+    • Công ty phát triển WordPress theme Charity, Eduma, Adot..., bán trên các chợ theme như Themeforest
+Mô tả công việc
+    • Phát triển, chỉnh sửa theme theo yêu cầu của khách hàng
+    • Hỗ trợ kỹ thuật khách hàng trong quá trình sử dụng (cài đặt, xử lý issue,
+    • Kỹ năng sử dụng chính:
+        ◦ Wordpress
+        ◦ HTML/CSS
+        ◦ Javascript (các thư viện sử dụng ví dụ jQuery…)
+
+Front End Developer - 04/2019 to 04/2022
+Công ty Merchize, Hà Nội
+    • Công ty Ecommerce cung cấp nền tảng bán và sản xuất các sản phẩm print on demand.
+    • Đơn hàng được khách hàng đặt mua từ khăp nơi trên thế giới, chuyển về công ty thực hiện sản xuất và ship đến tay khách hàng (chủ yếu thị trường EU và US)
+Mô tả công việc
+    • Xây dựng ứng dụng WebApp (Store Front) cho các nhà bán hàng (Seller)
+    • Phát triển ứng dụng WebApp cho bộ phận Fulfillment, kiểm soát đơn hàng, phân loại sản phẩm, phê duyệt thiết kế trước khi đưa vào sản xuất.
+    • Phát triển ứng dụng WebApp cho xưởng sản xuất, kiểm soát quy trình sản xuất, QC, đóng gói, dán label, theo dõi tracking…cho tới khi sản phẩm được giao tới khách hàng
+    • Hỗ trợ khách hàng (Seller), người dùng (đội vận hành của công ty) trong quá trình sử dụng
+    • Kỹ năng sử dụng chính:
+        ◦ ReactJS
+        ◦ NodeJS
+        ◦ Gitlab CI/CD
+        ◦ MongoDB
+
+Front End Developer - 05/2022 to 02/2025
+Công ty InfoPlus, Hà Nội
+    • Công ty công nghệ cung cấp nền tảng tài chính API, hỗ trợ các dịch vụ tài chính tự động với hệ thống tài chính tự động trên nền tảng công nghệ Hàn Quốc.
+Mô tả công việc
+    • Xây dựng ứng dụng WebApp, Backoffice cho khách hàng và nhân viên của hệ thống thu hộ ngân hàng Việt Á, BIDV, Woori bank, Shinhan bank ....
+    • Kỹ năng sử dụng chính:
+        ◦ ReactJS
+        ◦ SCSS
+        ◦ Typescript
+        ◦ Java
+        ◦ Gitlab CI/CD
+        ◦ SQL
+        ◦ Redux/Redux thunl, Redux toolkit
+
+Lead Front End Developer - 11/2022 to Now
+Công ty Alohub, Hà Nội
+    • Công ty công nghệ cung cấp nền tảng tổng đài, crm, contact center.
+Mô tả công việc
+    • Xây dựng ứng dụng WebApp, app mobile.
+    • Kỹ năng sử dụng chính:
+        ◦ ReactJS
+        ◦ SCSS
+        ◦ Typescript
+        ◦ Java
+        ◦ Gitlab CI/CD
+        ◦ SQL
+        ◦ Redux/Redux thunl, Redux toolkit
+
