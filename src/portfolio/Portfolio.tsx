@@ -572,6 +572,11 @@ const PortfolioInner: React.FC = () => {
               <Reveal key={p.title} delay={idx * 100} direction="scale">
                 <Tilt>
                   <div className="proj-card" onClick={() => setSelectedProject(p)}>
+                    <div className="proj-card-header">
+                      <div className="proj-card-dots"><i /><i /><i /></div>
+                      <span className="proj-card-filename">{p.company.toLowerCase().replace(/\s+/g, '-')}.tsx</span>
+                      {p.company === 'Alohub' && <span className="proj-active-dot" />}
+                    </div>
                     <div className="proj-banner" style={{ background: p.gradient }}>
                       {p.image && <img src={p.image} alt={p._title} className="proj-banner-img" />}
                       <div className="proj-pattern" />
@@ -579,9 +584,12 @@ const PortfolioInner: React.FC = () => {
                       <span className="proj-idx">0{idx + 1}</span>
                     </div>
                     <div className="proj-body">
-                      <h3>{p._title}</h3>
+                      <h3><span className="proj-title-bracket">&lt;</span>{p._title}<span className="proj-title-bracket">/&gt;</span></h3>
                       <p>{p._description}</p>
-                      <div className="proj-pills">{p.techs.slice(0, 4).map(tc => <span key={tc} className="pill">{tc}</span>)}</div>
+                      <div className="proj-pills">
+                        {p.techs.slice(0, 3).map(tc => <span key={tc} className="pill">{tc}</span>)}
+                        {p.techs.length > 3 && <span className="proj-extra-count">+{p.techs.length - 3}</span>}
+                      </div>
                       <div className="proj-actions">
                         <span className="proj-link">
                           {t.projects.viewDetails}
@@ -595,6 +603,7 @@ const PortfolioInner: React.FC = () => {
                         )}
                       </div>
                     </div>
+                    <div className="proj-scanline" />
                     <div className="proj-border-glow" />
                   </div>
                 </Tilt>
