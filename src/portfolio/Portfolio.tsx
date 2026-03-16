@@ -180,9 +180,28 @@ type TranslatedProject = Project & { _title?: string; _description?: string; _ro
 
 const ProjectModal: React.FC<{ project: TranslatedProject | null; onClose: () => void; labels: { keyFeatures: string; highlightsLabel: string; technologies: string; visitWebsite: string; downloadApp: string } }> = ({ project, onClose, labels }) => {
   useEffect(() => {
-    if (project) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
+    if (project) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+    } else {
+      const top = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (top) window.scrollTo(0, parseInt(top, 10) * -1);
+    }
+    return () => {
+      const top = document.body.style.top;
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      if (top) window.scrollTo(0, parseInt(top, 10) * -1);
+    };
   }, [project]);
 
   if (!project) return null;
