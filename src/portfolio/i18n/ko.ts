@@ -77,6 +77,7 @@ const ko: Translations = {
     keyFeatures: '주요 기능',
     highlightsLabel: '하이라이트',
     technologies: '기술',
+    downloadApp: '앱 다운로드',
     items: [
       {
         title: 'Alohub 모바일 앱',

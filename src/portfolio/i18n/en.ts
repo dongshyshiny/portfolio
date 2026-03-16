@@ -77,6 +77,7 @@ const en: Translations = {
     keyFeatures: 'Key Features',
     highlightsLabel: 'Highlights',
     technologies: 'Technologies',
+    downloadApp: 'Download App',
     items: [
       {
         title: 'Alohub Mobile App',

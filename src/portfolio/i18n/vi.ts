@@ -77,6 +77,7 @@ const vi: Translations = {
     keyFeatures: 'Tính Năng Chính',
     highlightsLabel: 'Điểm Nổi Bật',
     technologies: 'Công Nghệ',
+    downloadApp: 'Tải Ứng Dụng',
     items: [
       {
         title: 'Alohub Mobile App',

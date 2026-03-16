@@ -45,6 +45,7 @@ export interface Translations {
     keyFeatures: string;
     highlightsLabel: string;
     technologies: string;
+    downloadApp: string;
     items: {
       title: string;
       description: string;
