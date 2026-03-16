@@ -31,11 +31,21 @@ const useCountUp = (end: number, duration = 2000, start = false) => {
   return count;
 };
 
+const useMouseParallax = () => {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const handleMove = useCallback((e: React.MouseEvent) => {
+    const x = (e.clientX / window.innerWidth - 0.5) * 2;
+    const y = (e.clientY / window.innerHeight - 0.5) * 2;
+    setPos({ x, y });
+  }, []);
+  return { pos, handleMove };
+};
+
 /* ====== Components ====== */
-const Reveal: React.FC<{ children: React.ReactNode; className?: string; delay?: number }> = ({ children, className = '', delay = 0 }) => {
+const Reveal: React.FC<{ children: React.ReactNode; className?: string; delay?: number; direction?: 'up' | 'left' | 'right' | 'scale' }> = ({ children, className = '', delay = 0, direction = 'up' }) => {
   const { ref, isVisible } = useInView();
   return (
-    <div ref={ref} className={`reveal ${isVisible ? 'revealed' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
+    <div ref={ref} className={`reveal reveal-${direction} ${isVisible ? 'revealed' : ''} ${className}`} style={{ transitionDelay: `${delay}ms` }}>
       {children}
     </div>
   );
@@ -49,9 +59,9 @@ const Tilt: React.FC<{ children: React.ReactNode; className?: string }> = ({ chi
     const rect = el.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    el.style.transform = `perspective(800px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) scale3d(1.02, 1.02, 1.02)`;
+    el.style.transform = `perspective(800px) rotateY(${x * 10}deg) rotateX(${-y * 10}deg) scale3d(1.03, 1.03, 1.03)`;
     const shine = el.querySelector('.card-shine') as HTMLElement;
-    if (shine) { shine.style.opacity = '1'; shine.style.background = `radial-gradient(circle at ${e.clientX - rect.left}px ${e.clientY - rect.top}px, rgba(255,255,255,0.06) 0%, transparent 60%)`; }
+    if (shine) { shine.style.opacity = '1'; shine.style.background = `radial-gradient(circle at ${e.clientX - rect.left}px ${e.clientY - rect.top}px, rgba(255,255,255,0.08) 0%, transparent 60%)`; }
   };
   const handleLeave = () => {
     const el = ref.current;
@@ -76,39 +86,52 @@ const Particles: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     let animId: number;
+    let mouse = { x: -1000, y: -1000 };
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     resize();
     window.addEventListener('resize', resize);
+    const onMouse = (e: MouseEvent) => { mouse = { x: e.clientX, y: e.clientY }; };
+    window.addEventListener('mousemove', onMouse);
 
-    const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number }[] = [];
-    for (let i = 0; i < 80; i++) {
+    const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number; hue: number }[] = [];
+    for (let i = 0; i < 100; i++) {
       particles.push({
         x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
-        size: Math.random() * 1.5 + 0.5, opacity: Math.random() * 0.5 + 0.1,
+        vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+        size: Math.random() * 2 + 0.5, opacity: Math.random() * 0.5 + 0.1,
+        hue: Math.random() > 0.5 ? 260 : 190,
       });
     }
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach((p, i) => {
+        // Mouse repulsion
+        const mdx = p.x - mouse.x, mdy = p.y - mouse.y;
+        const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+        if (mDist < 150) {
+          p.vx += (mdx / mDist) * 0.15;
+          p.vy += (mdy / mDist) * 0.15;
+        }
+        p.vx *= 0.98; p.vy *= 0.98;
         p.x += p.vx; p.y += p.vy;
         if (p.x < 0) p.x = canvas.width; if (p.x > canvas.width) p.x = 0;
         if (p.y < 0) p.y = canvas.height; if (p.y > canvas.height) p.y = 0;
+
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(167, 139, 250, ${p.opacity})`;
+        ctx.fillStyle = `hsla(${p.hue}, 80%, 70%, ${p.opacity})`;
         ctx.fill();
-        // Connect nearby particles
+
         for (let j = i + 1; j < particles.length; j++) {
           const dx = p.x - particles[j].x, dy = p.y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
+          if (dist < 130) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(167, 139, 250, ${0.06 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = `hsla(${p.hue}, 70%, 60%, ${0.08 * (1 - dist / 130)})`;
+            ctx.lineWidth = 0.6;
             ctx.stroke();
           }
         }
@@ -116,7 +139,7 @@ const Particles: React.FC = () => {
       animId = requestAnimationFrame(draw);
     };
     draw();
-    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
+    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); window.removeEventListener('mousemove', onMouse); };
   }, []);
   return <canvas ref={canvasRef} className="particles-canvas" />;
 };
@@ -143,16 +166,33 @@ const TypeWriter: React.FC<{ words: string[]; className?: string }> = ({ words, 
   return <span className={className}>{text}<span className="typewriter-cursor">|</span></span>;
 };
 
+/* Marquee tech strip */
+const TechMarquee: React.FC = () => {
+  const techs = ['React', 'React Native', 'TypeScript', 'Node.js', 'Java', 'Spring Boot', 'PostgreSQL', 'MongoDB', 'Docker', 'AWS', 'GraphQL', 'Redis', 'Next.js', 'Firebase', 'GitHub Actions', 'Nginx'];
+  return (
+    <div className="marquee-wrap">
+      <div className="marquee-track">
+        {[...techs, ...techs].map((t, i) => (
+          <span key={i} className="marquee-item">{t}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 /* ====== Main ====== */
 const Portfolio: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const { pos, handleMove } = useMouseParallax();
 
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 50);
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollProgress(total > 0 ? window.scrollY / total : 0);
       const ids = ['contact', 'projects', 'experience', 'skills', 'about', 'hero'];
       for (const id of ids) {
         const el = document.getElementById(id);
@@ -163,11 +203,9 @@ const Portfolio: React.FC = () => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const handleMouse = useCallback((e: React.MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY }), []);
-
   const scrollTo = (id: string) => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setMenuOpen(false); };
 
-  const typewriterWords = useMemo(() => ['React Developer', 'Mobile Engineer', 'Team Leader', 'Problem Solver'], []);
+  const typewriterWords = useMemo(() => ['React Developer', 'Mobile Engineer', 'Team Leader', 'Problem Solver', 'UI Architect'], []);
 
   const skills = [
     { category: 'Frontend', icon: '🎨', items: ['React', 'React Native', 'TypeScript', 'JavaScript', 'HTML/CSS', 'Redux', 'Next.js'], color: '#a78bfa' },
@@ -179,22 +217,21 @@ const Portfolio: React.FC = () => {
   ];
 
   const experiences = [
-    { role: 'Dev Lead - Frontend & Mobile', company: 'Alohub', period: '2022 — Present', description: 'Lead a team of frontend and mobile developers. Architect and develop React & React Native applications. Implement CI/CD pipelines and code review processes.', techs: ['React', 'React Native', 'TypeScript', 'Node.js', 'Docker'] },
-    { role: 'Senior Frontend Developer', company: 'Tech Company', period: '2020 — 2022', description: 'Developed and maintained large-scale web applications. Mentored junior developers and established coding standards.', techs: ['React', 'JavaScript', 'Java', 'PostgreSQL'] },
-    { role: 'Mobile Developer', company: 'Startup', period: '2018 — 2020', description: 'Built cross-platform mobile applications from scratch using React Native. Integrated with REST APIs and third-party services.', techs: ['React Native', 'Node.js', 'MongoDB', 'Firebase'] },
+    { role: 'Dev Lead - Frontend & Mobile', company: 'Alohub', period: '2022 — Present', description: 'Lead a team of frontend and mobile developers. Architect and develop React & React Native applications. Implement CI/CD pipelines and code review processes.', techs: ['React', 'React Native', 'TypeScript', 'Node.js', 'Docker'], current: true },
+    { role: 'Senior Frontend Developer', company: 'Tech Company', period: '2020 — 2022', description: 'Developed and maintained large-scale web applications. Mentored junior developers and established coding standards.', techs: ['React', 'JavaScript', 'Java', 'PostgreSQL'], current: false },
+    { role: 'Mobile Developer', company: 'Startup', period: '2018 — 2020', description: 'Built cross-platform mobile applications from scratch using React Native. Integrated with REST APIs and third-party services.', techs: ['React Native', 'Node.js', 'MongoDB', 'Firebase'], current: false },
   ];
 
   const projects = [
-    { title: 'Alohub Info CMS', description: 'Admin management platform for banking & payment collection services. Configure contracts, ECC, ACC and various admin features for bank operations and payment processing.', techs: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Docker'], gradient: 'linear-gradient(135deg, #7c3aed, #2563eb)' },
-    { title: 'Alohub Mobile App', description: 'Cross-platform mobile app with SIP-based calling, real-time call notifications on lock screen, push notifications, and seamless VoIP integration for banking communication.', techs: ['React Native', 'SIP/VoIP', 'Push Notifications', 'TypeScript'], gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6)' },
-    { title: 'E-Commerce Marketplace', description: 'Full-stack e-commerce platform with real-time inventory, order tracking, and payment integration.', techs: ['Next.js', 'Node.js', 'MongoDB', 'AWS'], gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)' },
-    { title: 'CI/CD Pipeline Automation', description: 'Automated build, test, and deployment pipeline for multiple projects using GitHub Actions and Docker.', techs: ['Docker', 'GitHub Actions', 'Jenkins', 'Nginx'], gradient: 'linear-gradient(135deg, #10b981, #3b82f6)' },
+    { title: 'Alohub Info CMS', description: 'Admin management platform for banking & payment collection services. Configure contracts, ECC, ACC and various admin features for bank operations and payment processing.', techs: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Docker'], gradient: 'linear-gradient(135deg, #7c3aed, #2563eb)', icon: '🏦', featured: true },
+    { title: 'Alohub Mobile App', description: 'Cross-platform mobile app with SIP-based calling, real-time call notifications on lock screen, push notifications, and seamless VoIP integration for banking communication.', techs: ['React Native', 'SIP/VoIP', 'Push Notifications', 'TypeScript'], gradient: 'linear-gradient(135deg, #06b6d4, #8b5cf6)', icon: '📱', featured: true },
+    { title: 'E-Commerce Marketplace', description: 'Full-stack e-commerce platform with real-time inventory, order tracking, and payment integration.', techs: ['Next.js', 'Node.js', 'MongoDB', 'AWS'], gradient: 'linear-gradient(135deg, #ec4899, #8b5cf6)', icon: '🛒', featured: false },
+    { title: 'CI/CD Pipeline Automation', description: 'Automated build, test, and deployment pipeline for multiple projects using GitHub Actions and Docker.', techs: ['Docker', 'GitHub Actions', 'Jenkins', 'Nginx'], gradient: 'linear-gradient(135deg, #10b981, #3b82f6)', icon: '⚙️', featured: false },
   ];
 
   const navItems = ['about', 'skills', 'experience', 'projects', 'contact'];
 
   /* Stats with counter */
-  const statsRef = useRef<HTMLDivElement>(null);
   const { ref: statsObsRef, isVisible: statsVisible } = useInView(0.3);
 
   const stat1 = useCountUp(5, 1500, statsVisible);
@@ -203,20 +240,23 @@ const Portfolio: React.FC = () => {
   const stat4 = useCountUp(99, 2000, statsVisible);
 
   return (
-    <div className="portfolio" onMouseMove={handleMouse}>
+    <div className="portfolio" onMouseMove={handleMove}>
+      {/* Scroll progress bar */}
+      <div className="scroll-progress" style={{ transform: `scaleX(${scrollProgress})` }} />
+
       {/* Background layers */}
       <Particles />
       <div className="noise-overlay" />
       <div className="gradient-orbs">
-        <div className="g-orb g-orb-1" />
-        <div className="g-orb g-orb-2" />
-        <div className="g-orb g-orb-3" />
+        <div className="g-orb g-orb-1" style={{ transform: `translate(${pos.x * 20}px, ${pos.y * 20}px)` }} />
+        <div className="g-orb g-orb-2" style={{ transform: `translate(${pos.x * -15}px, ${pos.y * -15}px)` }} />
+        <div className="g-orb g-orb-3" style={{ transform: `translate(${pos.x * 10}px, ${pos.y * 10}px)` }} />
       </div>
-      <div className="cursor-spotlight" style={{ left: mousePos.x, top: mousePos.y }} />
 
       {/* Nav */}
       <nav className={`nav ${scrolled ? 'nav-blur' : ''}`}>
         <div className="nav-inner">
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <a className="nav-logo" onClick={() => scrollTo('hero')}>
             <span className="logo-gradient">{'<DN />'}</span>
           </a>
@@ -226,13 +266,20 @@ const Portfolio: React.FC = () => {
           <ul className={`nav-menu ${menuOpen ? 'open' : ''}`}>
             {navItems.map((item) => (
               <li key={item}>
+                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                 <a onClick={() => scrollTo(item)} className={activeSection === item ? 'active' : ''}>
                   <span className="nav-text">{item.charAt(0).toUpperCase() + item.slice(1)}</span>
                   {activeSection === item && <span className="nav-dot" />}
                 </a>
               </li>
             ))}
-            <li><a onClick={() => scrollTo('contact')} className="nav-hire">Let's Talk</a></li>
+            <li>
+              {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
+              <a onClick={() => scrollTo('contact')} className="nav-hire">
+                <span className="nav-hire-pulse" />
+                Let's Talk
+              </a>
+            </li>
           </ul>
         </div>
       </nav>
@@ -241,39 +288,52 @@ const Portfolio: React.FC = () => {
       <section id="hero" className="hero">
         <div className="hero-grid-bg" />
         <div className="hero-radial" />
+        {/* Floating shapes */}
+        <div className="hero-shapes">
+          <div className="h-shape h-shape-1" style={{ transform: `translate(${pos.x * 30}px, ${pos.y * 30}px)` }} />
+          <div className="h-shape h-shape-2" style={{ transform: `translate(${pos.x * -25}px, ${pos.y * -25}px)` }} />
+          <div className="h-shape h-shape-3" style={{ transform: `translate(${pos.x * 15}px, ${pos.y * -20}px)` }} />
+        </div>
         <div className="hero-inner">
           <div className="hero-left">
             <Reveal>
               <div className="hero-chip">
                 <span className="chip-pulse" />
-                <span>Open to opportunities</span>
+                <span>Available for hire</span>
+                <span className="chip-arrow">→</span>
               </div>
             </Reveal>
             <Reveal delay={120}>
               <h1 className="hero-heading">
-                Hi, I'm{' '}
+                <span className="hero-line-1">Hi, I'm</span>
                 <span className="hero-name-glow">Dong Nguyen</span>
               </h1>
             </Reveal>
             <Reveal delay={240}>
               <h2 className="hero-typewriter">
+                <span className="hero-role-prefix">I'm a </span>
                 <TypeWriter words={typewriterWords} className="tw-text" />
               </h2>
             </Reveal>
             <Reveal delay={360}>
               <p className="hero-desc">
-                I build <span className="em-gradient">pixel-perfect</span>, accessible,
+                I craft <span className="em-gradient">pixel-perfect</span>, accessible,
                 high-performance web & mobile products that users love.
+                <span className="hero-desc-highlight"> 5+ years of building at scale.</span>
               </p>
             </Reveal>
             <Reveal delay={480}>
               <div className="hero-btns">
+                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                 <a onClick={() => scrollTo('projects')} className="btn-glow">
                   <span className="btn-glow-bg" />
                   <span className="btn-glow-text">Explore Work</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                  <span className="btn-shine" />
                 </a>
+                {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                 <a onClick={() => scrollTo('contact')} className="btn-outline-glow">
+                  <span className="btn-outline-border" />
                   Get In Touch
                 </a>
               </div>
@@ -294,7 +354,7 @@ const Portfolio: React.FC = () => {
           </div>
 
           <div className="hero-right">
-            <Reveal delay={300}>
+            <Reveal delay={300} direction="scale">
               <Tilt className="terminal-tilt">
                 <div className="terminal">
                   <div className="terminal-chrome">
@@ -306,15 +366,18 @@ const Portfolio: React.FC = () => {
 <span className="syn-kw">const</span> <span className="syn-fn">developer</span> <span className="syn-op">=</span> {'{'}{'\n'}
 {'  '}<span className="syn-key">name</span><span className="syn-op">:</span> <span className="syn-str">"Dong Nguyen"</span>,{'\n'}
 {'  '}<span className="syn-key">role</span><span className="syn-op">:</span> <span className="syn-str">"Dev Lead"</span>,{'\n'}
+{'  '}<span className="syn-key">focus</span><span className="syn-op">:</span> [<span className="syn-str">"Frontend"</span>, <span className="syn-str">"Mobile"</span>],{'\n'}
 {'  '}<span className="syn-key">stack</span><span className="syn-op">:</span> [{'\n'}
-{'    '}<span className="syn-str">"React"</span>,{'\n'}
-{'    '}<span className="syn-str">"React Native"</span>,{'\n'}
-{'    '}<span className="syn-str">"Node.js"</span>,{'\n'}
-{'    '}<span className="syn-str">"Java"</span>{'\n'}
+{'    '}<span className="syn-str">"React"</span>, <span className="syn-str">"React Native"</span>,{'\n'}
+{'    '}<span className="syn-str">"TypeScript"</span>, <span className="syn-str">"Node.js"</span>,{'\n'}
+{'    '}<span className="syn-str">"Java"</span>, <span className="syn-str">"Docker"</span>{'\n'}
 {'  '}],{'\n'}
 {'  '}<span className="syn-key">passion</span><span className="syn-op">:</span> <span className="syn-str">"Crafting digital{'\n'}    experiences"</span>{'\n'}
 {'}'};
                   </pre>
+                  <div className="terminal-line-numbers">
+                    {Array.from({ length: 11 }, (_, i) => <span key={i}>{i + 1}</span>)}
+                  </div>
                   <div className="terminal-glow" />
                 </div>
               </Tilt>
@@ -326,6 +389,9 @@ const Portfolio: React.FC = () => {
           <span>Scroll</span>
         </div>
       </section>
+
+      {/* Tech Marquee */}
+      <TechMarquee />
 
       {/* ===== ABOUT ===== */}
       <section id="about" className="section">
@@ -343,7 +409,7 @@ const Portfolio: React.FC = () => {
               <p>My expertise spans across <strong>React</strong>, <strong>React Native</strong>, <strong>Node.js</strong>, and <strong>Java</strong>, with solid knowledge in database design, CI/CD pipelines, and cloud deployment.</p>
               <p>As a team lead, I focus on code quality, best practices, and mentoring developers to deliver high-quality products on time.</p>
               <div className="about-tags">
-                {['Leadership', 'Architecture', 'Code Review', 'Mentoring', 'Agile'].map(t => (
+                {['Leadership', 'Architecture', 'Code Review', 'Mentoring', 'Agile', 'SIP/VoIP'].map(t => (
                   <span key={t} className="about-tag">{t}</span>
                 ))}
               </div>
@@ -355,13 +421,14 @@ const Portfolio: React.FC = () => {
                 { value: stat3, suffix: '+', label: 'Team Members Led', icon: '👥' },
                 { value: stat4, suffix: '%', label: 'Client Satisfaction', icon: '⭐' },
               ].map((s, i) => (
-                <Reveal key={s.label} delay={i * 100 + 200}>
+                <Reveal key={s.label} delay={i * 100 + 200} direction={i % 2 === 0 ? 'left' : 'right'}>
                   <Tilt>
                     <div className="num-card">
                       <span className="num-icon">{s.icon}</span>
                       <span className="num-value">{s.value}{s.suffix}</span>
                       <span className="num-label">{s.label}</span>
                       <div className="num-shimmer" />
+                      <div className="num-border-glow" />
                     </div>
                   </Tilt>
                 </Reveal>
@@ -383,7 +450,7 @@ const Portfolio: React.FC = () => {
           </Reveal>
           <div className="skills-mosaic">
             {skills.map((g, i) => (
-              <Reveal key={g.category} delay={i * 80}>
+              <Reveal key={g.category} delay={i * 80} direction={i < 3 ? 'left' : 'right'}>
                 <Tilt>
                   <div className="skill-tile" style={{ '--accent': g.color } as React.CSSProperties}>
                     <div className="skill-tile-head">
@@ -394,6 +461,7 @@ const Portfolio: React.FC = () => {
                       {g.items.map((item) => <span key={item} className="skill-chip">{item}</span>)}
                     </div>
                     <div className="skill-tile-accent" />
+                    <div className="skill-tile-border" />
                   </div>
                 </Tilt>
               </Reveal>
@@ -414,17 +482,21 @@ const Portfolio: React.FC = () => {
           </Reveal>
           <div className="exp-timeline">
             {experiences.map((exp, idx) => (
-              <Reveal key={idx} delay={idx * 150}>
-                <div className="exp-row">
+              <Reveal key={idx} delay={idx * 150} direction={idx % 2 === 0 ? 'left' : 'right'}>
+                <div className={`exp-row ${exp.current ? 'exp-current' : ''}`}>
                   <div className="exp-marker">
-                    <div className="exp-ring"><div className="exp-dot" /></div>
+                    <div className={`exp-ring ${exp.current ? 'exp-ring-active' : ''}`}>
+                      <div className="exp-dot" />
+                      {exp.current && <div className="exp-ring-pulse" />}
+                    </div>
                     {idx < experiences.length - 1 && <div className="exp-line" />}
                   </div>
                   <Tilt className="exp-card-wrap">
                     <div className="exp-card">
                       <div className="exp-top">
                         <span className="exp-period">{exp.period}</span>
-                        <span className="exp-company">{exp.company}</span>
+                        <span className={`exp-company ${exp.current ? 'exp-company-active' : ''}`}>{exp.company}</span>
+                        {exp.current && <span className="exp-badge">Current</span>}
                       </div>
                       <h3 className="exp-role">{exp.role}</h3>
                       <p className="exp-desc">{exp.description}</p>
@@ -450,17 +522,20 @@ const Portfolio: React.FC = () => {
           </Reveal>
           <div className="proj-grid">
             {projects.map((p, idx) => (
-              <Reveal key={idx} delay={idx * 100}>
+              <Reveal key={idx} delay={idx * 120} direction="scale">
                 <Tilt>
-                  <div className="proj-card">
+                  <div className={`proj-card ${p.featured ? 'proj-featured' : ''}`}>
                     <div className="proj-banner" style={{ background: p.gradient }}>
                       <div className="proj-pattern" />
+                      <span className="proj-icon">{p.icon}</span>
                       <span className="proj-idx">0{idx + 1}</span>
+                      {p.featured && <span className="proj-featured-badge">Featured</span>}
                     </div>
                     <div className="proj-body">
                       <h3>{p.title}</h3>
                       <p>{p.description}</p>
                       <div className="proj-pills">{p.techs.map(t => <span key={t} className="pill">{t}</span>)}</div>
+                      {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
                       <a className="proj-link" href="#" onClick={e => e.preventDefault()}>
                         View Details
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M7 17L17 7M7 7h10v10" /></svg>
@@ -503,6 +578,7 @@ const Portfolio: React.FC = () => {
                         <div className="contact-icon">{c.svg}</div>
                         <h3>{c.title}</h3>
                         <p>{c.sub}</p>
+                        <div className="contact-tile-glow" />
                       </div>
                     </Tilt>
                   </a>
@@ -512,6 +588,7 @@ const Portfolio: React.FC = () => {
                 <span className="btn-glow-bg" />
                 <span className="btn-glow-text">Say Hello</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+                <span className="btn-shine" />
               </a>
             </div>
           </Reveal>
@@ -520,9 +597,11 @@ const Portfolio: React.FC = () => {
 
       {/* Footer */}
       <footer className="site-footer">
+        <div className="footer-glow" />
         <div className="container footer-row">
+          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <a className="nav-logo" onClick={() => scrollTo('hero')}><span className="logo-gradient">{'<DN />'}</span></a>
-          <p>&copy; {new Date().getFullYear()} Dong Nguyen &mdash; Built with React + TypeScript</p>
+          <p>Designed & Built by <span className="footer-name">Dong Nguyen</span> &copy; {new Date().getFullYear()}</p>
           <div className="footer-links">
             <a href="https://github.com/dongnguyen" target="_blank" rel="noreferrer">GitHub</a>
             <a href="https://linkedin.com/in/dongnguyen" target="_blank" rel="noreferrer">LinkedIn</a>
@@ -530,6 +609,11 @@ const Portfolio: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Back to top */}
+      <button className={`back-to-top ${scrolled ? 'visible' : ''}`} onClick={() => scrollTo('hero')} aria-label="Back to top">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6" /></svg>
+      </button>
     </div>
   );
 };
